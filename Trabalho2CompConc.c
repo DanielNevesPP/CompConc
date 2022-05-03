@@ -38,7 +38,6 @@ int main(int argc, char* argv[]){
     double inicio, fim, delta;
     pthread_t *tid;
     tArgs *args;
-    clock_t t;
 
     //leitura e avaliacao dos parametros de entrada
     if(argc  < 3){
