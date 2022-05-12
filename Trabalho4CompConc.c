@@ -10,7 +10,7 @@ int *vetorEntrada;
 float *vetorSaidaSeq;
 float *vetorSaidaConc;
 int global;
-pthread_mutex_t mutex;
+pthread_mutex_t lock;
 
 int ehPrimo(long long int n) {
     if (n<=1) return 0;
@@ -24,28 +24,29 @@ int ehPrimo(long long int n) {
 void processaPrimos(int vetorEntrada[], float vetorSaida[], int dim) {
     for(int i = 0; i < dim; i++) {
         if (ehPrimo(vetorEntrada[i]))
-            vetorSaida[i] = sqrt(vetorEntrada[i]);
+            vetorSaidaSeq[i] = sqrt(vetorEntrada[i]);
         else
-            vetorSaida[i] = vetorEntrada[i];
+            vetorSaidaSeq[i] = vetorEntrada[i];
     }
 }
 
+//funcao das threads
 void *quadradoPrimos(){
 
-    pthread_mutex_lock(&mutex);
-    int i = global; 
+    pthread_mutex_lock(&lock);
+    int i = global;
     global++;
-    pthread_mutex_unlock(&mutex);
-    
+    pthread_mutex_unlock(&lock);
+
     while(i < dim){
         if (ehPrimo(vetorEntrada[i]))
             vetorSaidaConc[i] = sqrt(vetorEntrada[i]);
         else
             vetorSaidaConc[i] = vetorEntrada[i];
-        pthread_mutex_lock(&mutex);
+        pthread_mutex_lock(&lock);
         i = global;
         global++;
-        pthread_mutex_unlock(&mutex);
+        pthread_mutex_unlock(&lock);
     }
 }
 
@@ -70,6 +71,8 @@ int main(int argc, char *argv[]){
     for(i = 0; i < dim; i++){
         vetorEntrada[i] = rand() % dim;
     }
+
+    //funcao sequencial
     GET_TIME(inicio);
     processaPrimos(vetorEntrada, vetorSaida, dim);
     GET_TIME(fim);
