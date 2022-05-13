@@ -12,6 +12,7 @@ float *vetorSaidaConc;
 int global;
 pthread_mutex_t lock;
 
+//funcao que verifica se o numero eh primo
 int ehPrimo(long long int n) {
     if (n<=1) return 0;
     if (n==2) return 1;
@@ -21,12 +22,13 @@ int ehPrimo(long long int n) {
     return 1;
 }
 
+//funcao para calcular a raiz quadrada dos primos do vetor
 void processaPrimos(int vetorEntrada[], float vetorSaida[], int dim) {
     for(int i = 0; i < dim; i++) {
         if (ehPrimo(vetorEntrada[i]))
-            vetorSaidaSeq[i] = sqrt(vetorEntrada[i]);
+            vetorSaida[i] = sqrt(vetorEntrada[i]);
         else
-            vetorSaidaSeq[i] = vetorEntrada[i];
+            vetorSaida[i] = vetorEntrada[i];
     }
 }
 
@@ -48,6 +50,7 @@ void *quadradoPrimos(){
         global++;
         pthread_mutex_unlock(&lock);
     }
+    pthread_exit(NULL);
 }
 
 int main(int argc, char *argv[]){
@@ -58,38 +61,72 @@ int main(int argc, char *argv[]){
     }
     dim = atoll(argv[1]);
     nthreads = atoi(argv[2]);
-
     int i;
     double inicio, fim, delta;
-    pthread_t tid[NTHREADS];
+    pthread_t tid[nthreads];
+    pthread_mutex_init(&lock, NULL); //inicializa a variavel de exclusao mutua
 
     vetorEntrada = malloc(sizeof(int) * dim);
     vetorSaidaSeq = malloc(sizeof(int) * dim);
     vetorSaidaConc = malloc(sizeof(int) * dim);
 
+    //inicializa o vetor de entrada
+    for(i = 0; i < dim; i++){
+        vetorEntrada[i] = 0;
+    }
+    //da valores aleatorios ao vetor de entrada
     srand(time(NULL));
     for(i = 0; i < dim; i++){
-        vetorEntrada[i] = rand() % dim;
+        for(int j = 0; j < 100; j++){
+            vetorEntrada[i] += (rand() % 32767);
+        }
     }
 
     //funcao sequencial
     GET_TIME(inicio);
-    processaPrimos(vetorEntrada, vetorSaida, dim);
+    processaPrimos(vetorEntrada, vetorSaidaSeq, dim);
     GET_TIME(fim);
     delta = fim - inicio;
     printf("Tempo sequencial: %lf\n", delta);
 
+    //parte concorrente
+    GET_TIME(inicio);
     for(i = 0; i < nthreads; i++){
-        if(pthread_create(&tid[t], NULL, ExecutaTarefa, NULL)
+        if(pthread_create(&tid[i], NULL, quadradoPrimos, NULL)){
+            printf("ERRO--pthread_create\n");
+            exit(-1);
+        }
     }
 
-    printf("Vetor de entrada:\n");
+    for(i = 0; i < nthreads; i++){
+        if(pthread_join(tid[i], NULL)){
+            printf("ERRO--pthread_join\n");
+            exit(-1);
+        }
+    }
+    GET_TIME(fim);
+    delta = fim - inicio;
+    printf("Tempo concorrente: %lf\n", delta);
+
+    //printa os vetores de entrada e saida
+    /*printf("Vetor de entrada:\n");
     for(i = 0; i < dim; i++){
         printf("%d\n", vetorEntrada[i]);
     }
-
-    printf("Vetor de saida:\n");
+    printf("\nVetor de saida:\n");
     for(i = 0; i < dim; i++){
         printf("%f\n", vetorSaidaSeq[i]);
     }
+    //compara o vetor de saida cncorrente com o sequencial
+    for(i = 0; i < dim; i++){
+        if(vetorSaidaConc[i] != vetorSaidaSeq[i]){
+            printf("\nMatrizes diferentes\n");
+        }
+    }*/
+
+    pthread_mutex_destroy(&lock);
+    free(tid);
+    free(vetorEntrada);
+    free(vetorSaidaConc);
+    free(vetorSaidaSeq);
 }
