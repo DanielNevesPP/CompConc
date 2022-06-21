@@ -14,7 +14,7 @@ class Pares extends Thread{
     }
 
     //metodo executado pela thread
-    public void run(){
+    public synchronized void run(){
         for(int i = id; i < ParesVetor.tam; i += ParesVetor.N){
             if(vetor[i] % 2 == 0){
                 qtd++;
