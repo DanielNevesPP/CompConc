@@ -72,8 +72,10 @@ void merge(int *vetor, int inicio, int meio, int fim){
 
 }
 
+//funcao das threads
 void *mergeSortConc(void *arg){
 
+    //divide o vetor pelo numero de threads e faz um mergesort para cada parte separadamente
     int id = (int) arg;
     int fim;
     int inicio = floor((dim / N)) * id;
@@ -115,7 +117,7 @@ int main(int argc, char* argv[]){
     t = clock();
     mergeSort(vetorSeq, 0, dim - 1); //faz o mergesort sequencialmente
     t = clock() - t;
-    printf("Tempo sequencial: %lf\n", ((double)t)/(CLOCKS_PER_SEC));
+    printf("Tempo sequencial: %lf s\n", ((double)t)/(CLOCKS_PER_SEC));
 
     //parte concorrente
     t = clock();
@@ -139,10 +141,10 @@ int main(int argc, char* argv[]){
         }
     }
 
-    merge(vetorConc, 0, (dim-1)/2, dim-1);
+    merge(vetorConc, 0, (dim-1)/2, dim-1); //faz um merge final para terminar de ordenar o vetor
 
     t = clock() - t;
-    printf("Tempo concorrente: %lf\n", ((double)t)/(CLOCKS_PER_SEC));
+    printf("Tempo concorrente: %lf s1\n", ((double)t)/(CLOCKS_PER_SEC));
 
     //printa o vetor
     /*for(i = 0; i < dim; i++){
