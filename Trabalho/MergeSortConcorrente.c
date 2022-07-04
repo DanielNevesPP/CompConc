@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <pthread.h>
+#include <time.h>
 
 int *vetorSeq, *vetorConc, dim, N;
 
@@ -70,15 +72,16 @@ void merge(int *vetor, int inicio, int meio, int fim){
 
 }
 
-void *MergeSortConc(void *arg){
+void *mergeSortConc(void *arg){
 
     int id = (int) arg;
+    int fim;
     int inicio = floor((dim / N)) * id;
     if(id != (N - 1)){
-        int fim = (floor((dim / N)) * (id + 1)) - 1;
+        fim = (floor((dim / N)) * (id + 1)) - 1;
     }
     else{
-        int fim = dim;
+        fim = dim - 1;
     }
     mergeSort(vetorConc, inicio, fim);
 
@@ -89,6 +92,7 @@ int main(int argc, char* argv[]){
 
     int i;
     pthread_t *tid; //identificadores das threads no sistema
+    clock_t t; //variavel para armazenar tempo
 
     if(argc != 3){
         printf("Digite: %s (tamanho do vetor) (numero de threads)\n", argv[0]); //exemplo: ./ordena 1000 2 (mergesort de vetor de tamanho 1000 com 2 threads)
@@ -97,21 +101,57 @@ int main(int argc, char* argv[]){
     dim = atoi(argv[1]);
     N = atoi(argv[2]);
 
-    vetor = malloc(dim * sizeof(int));
+    vetorSeq = malloc(dim * sizeof(int));
+    vetorConc = malloc(dim * sizeof(int));
 
     //da valores aleatorios ao vetor
     srand(time(NULL));
-    for(i = 0; i < dim; i++){
+    for(i = 0; i < dim; i
+    ++){
         vetorSeq[i] = rand() % dim;
         vetorConc[i] = vetorSeq[i];
     }
 
+    t = clock();
     mergeSort(vetorSeq, 0, dim - 1); //faz o mergesort sequencialmente
+    t = clock() - t;
+    printf("Tempo sequencial: %lf\n", ((double)t)/(CLOCKS_PER_SEC));
+
+    //parte concorrente
+    t = clock();
+    tid = (pthread_t *) malloc(sizeof(pthread_t) * N);
+    if(tid == NULL){
+      fprintf(stderr, "ERRO--malloc\n");
+      return 2;
+    }
+
+    for(i = 0; i < N; i++){
+        if(pthread_create(&tid[i], NULL, mergeSortConc, (void*) i)){
+            printf("ERRO--pthread_create\n");
+            exit(-1);
+        }
+    }
+
+    for(i = 0; i < N; i++){
+        if(pthread_join(tid[i], NULL)){
+            printf("ERRO--pthread_join\n");
+            exit(-1);
+        }
+    }
+
+    merge(vetorConc, 0, (dim-1)/2, dim-1);
+
+    t = clock() - t;
+    printf("Tempo concorrente: %lf\n", ((double)t)/(CLOCKS_PER_SEC));
 
     //printa o vetor
-    for(i = 0; i < dim; i++){
-        printf("%d\n", vetor[i]);
-    }
+    /*for(i = 0; i < dim; i++){
+        printf("%d\n", vetorSeq[i]);
+        if(vetorSeq[i] != vetorConc[i]){
+            printf("vetor errado\n");
+            break;
+        }
+    }*/
 
     return 0;
 
