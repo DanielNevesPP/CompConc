@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <pthread.h>
+#include <semaphore.h>
 
 sem_t em_e, em_l, escr, leit; //semaforos
 int e = 0, l = 0; //globais
